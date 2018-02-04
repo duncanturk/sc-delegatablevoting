@@ -45,6 +45,14 @@ contract DelegatableVoting{
         remainingTokens[msg.sender] = tokensPerAddress;
     }
 
+    function delegateTokens(address delegatee, uint amount) public claimed {
+        require(remainingTokens[msg.sender] >= amount);
+        require(0 < amount);
+        require(claimedTokens[delegatee]);
+        remainingTokens[delegatee] += amount;
+        remainingTokens[msg.sender] -= amount;
+    }
+
     function vote(uint option, int amount) public claimed hasStared{
         require(amount.abs() <= remainingTokens[msg.sender]);
         require(options.length > option);
@@ -57,7 +65,7 @@ contract DelegatableVoting{
         options.push(option);
     }
 
-    function start(string option) public hasNotStared {
+    function start() public hasNotStared {
         started = true;
     }
 }
