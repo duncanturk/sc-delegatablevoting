@@ -1,11 +1,17 @@
 pragma solidity ^0.4.19;
 
+import 'ExtendedInt.sol';
+
 contract DelegatableVoting{
+    using ExtendedInt for int;
+
     mapping (address => uint) private remainingTokens;
     mapping (address => bool) private claimedTokens;
 
-    uint private pro;
-    uint private con;
+    mapping (uint => int) private votesPerOption;
+    string[] private options;
+
+    bool private started;
 
     uint private tokensPerAddress;
 
@@ -19,8 +25,19 @@ contract DelegatableVoting{
         _;
     }
 
+    modifier hasNotStared(){
+        require(!started);
+        _;
+    }
+
+    modifier hasStared(){
+        require(started);
+        _;
+    }
+
     function DelegatableVoting(uint _tokensPerAddress) public {
         tokensPerAddress = _tokensPerAddress;
+        started = false;
     }
 
     function claimTokens() public notClaimed {
@@ -28,27 +45,19 @@ contract DelegatableVoting{
         remainingTokens[msg.sender] = tokensPerAddress;
     }
 
-    function voteCon(uint amount) public claimed {
-        require(amount<=remainingTokens[msg.sender]);
-        require(amount>0);
+    function vote(uint option, int amount) public claimed hasStared{
+        require(amount.abs() <= remainingTokens[msg.sender]);
+        require(options.length > option);
 
-        con += amount;
-        remainingTokens[msg.sender]-=amount;
+        votesPerOption[option] += amount;
+        remainingTokens[msg.sender] -= amount.abs();
     }
 
-    function votePro(uint amount) public claimed {
-        require(amount<=remainingTokens[msg.sender]);
-        require(amount>0);
-
-        pro += amount;
-        remainingTokens[msg.sender]-=amount;
+    function addOption(string option) public hasNotStared {
+        options.push(option);
     }
 
-    function getPro() public view returns(uint){
-        return pro;
-    }
-
-    function getCon() public view returns(uint){
-        return con;
+    function start(string option) public hasNotStared {
+        started = true;
     }
 }
