@@ -6,6 +6,7 @@ contract DelegatableVoting{
     using ExtendedInt for int;
 
     mapping (address => uint) private remainingTokens;
+    mapping (address => mapping (address => uint)) private delegatedTokens;
     mapping (address => bool) private claimedTokens;
 
     mapping (uint => int) private votesPerOption;
@@ -46,11 +47,21 @@ contract DelegatableVoting{
     }
 
     function delegateTokens(address delegatee, uint amount) public claimed {
-        require(remainingTokens[msg.sender] >= amount);
         require(0 < amount);
+        require(remainingTokens[msg.sender] >= amount);
         require(claimedTokens[delegatee]);
         remainingTokens[delegatee] += amount;
         remainingTokens[msg.sender] -= amount;
+        delegateTokens[msg.sender][delegatee] += amount;
+    }
+
+    function undelegateTokens(address delegatee, uint amount) public claimed {
+        require(0 < amount);
+        require(delegatedTokens[msg.sender][delegatee] >= amount);
+        require(remainingTokens[delegatee] >= amount);
+        remainingTokens[delegatee] -= amount;
+        remainingTokens[msg.sender] += amount;
+        delegateTokens[msg.sender][delegatee] -= amount;
     }
 
     function vote(uint option, int amount) public claimed hasStared{
